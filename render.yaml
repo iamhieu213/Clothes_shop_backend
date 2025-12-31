@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: Clothes_shop_backend
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    # Các biến môi trường sau cần được cấu hình trong Render Dashboard:
+    # - DB_NAME
+    # - DB_USER
+    # - DB_PASSWORD
+    # - DB_HOST
+    # - DB_PORT
+    # - DB_SSL
+    # - JWT_SECRET
+    # - JWT_REFRESH_SECRET
+    # - JWT_RESET_SECRET
+    # - SESSION_SECRET
+    # - EMAIL_USER
+    # - EMAIL_PASS
+    # - CLOUDINARY_CLOUD_NAME
+    # - CLOUDINARY_API_KEY
+    # - CLOUDINARY_API_SECRET
+    # - GOOGLE_CLIENT_ID
+    # - GOOGLE_CLIENT_SECRET
+    # - GOOGLE_CALLBACK_URL
+    # - FACEBOOK_APP_ID
+    # - FACEBOOK_APP_SECRET
+    # - FACEBOOK_CALLBACK_URL
+    # - FRONTEND_URL
+    # - VNP_TMN_CODE (optional)
+    # - VNP_HASH_SECRET (optional)
+    # - VNP_URL (optional)
+    # - VNP_RETURN_URL (optional)
+
