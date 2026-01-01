@@ -7,6 +7,7 @@ export const buildCorsOptions = () => {
       "http://localhost:5174",
       "http://localhost:3000",
       "http://localhost:8080",
+      "https://clothes-shop-rouge.vercel.app", // Add Vercel URL explicitly
       APP_CONSTANTS.frontendUrl,
     ].filter(Boolean))
   );
@@ -19,6 +20,10 @@ export const buildCorsOptions = () => {
       if (!origin) {
         return callback(null, true);
       }
+
+      // Log origin để debug
+      console.log("Incoming origin:", origin);
+
 
       // Trong môi trường dev, cho phép tất cả localhost origins
       if (isDev) {
