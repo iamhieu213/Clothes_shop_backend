@@ -6,7 +6,9 @@ const env = loadEnv();
 
 // Cấu hình Transporter
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
     auth: {
         user: env.EMAIL_USER,
         pass: env.EMAIL_PASS,
@@ -158,7 +160,7 @@ export const sendVerificationEmail = async (to, token, userName = "Bạn") => {
     const verificationUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
 
     const subject = "Xác thực email đăng ký tài khoản";
-    
+
     // HTML email template
     const html = `
         <!DOCTYPE html>

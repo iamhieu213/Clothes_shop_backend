@@ -7,7 +7,8 @@ export const buildCorsOptions = () => {
       "http://localhost:5174",
       "http://localhost:3000",
       "http://localhost:8080",
-      "https://clothes-shop-rouge.vercel.app", // Add Vercel URL explicitly
+      "https://clothes-shop-rouge.vercel.app",
+      "https://admin-panel-clothes-shop-deploy.vercel.app", // Add Vercel URL explicitly
       APP_CONSTANTS.frontendUrl,
     ].filter(Boolean))
   );

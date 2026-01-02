@@ -43,17 +43,33 @@ passport.use(
         });
 
         if (!user) {
-          // Kiểm tra email đã tồn tại
+          // Kiểm tra email đã tồn tại (bất kể provider nào)
           const existingUser = await User.findOne({ 
-            where: { email, provider: "local" } 
+            where: { email } 
           });
           
           if (existingUser) {
-            return done(
-              null,
-              false,
-              { message: "Email này đã được dùng cho tài khoản local" }
-            );
+             // Email đã tồn tại -> Liên kết tài khoản Facebook với tài khoản này
+             // Cập nhật provider thành "facebook" (hoặc giữ nguyên logic business của bạn)
+             // Ở đây ta sẽ cập nhật provider_id để lần sau đăng nhập được bằng FB
+             
+             // Nếu user chưa có provider (null) hoặc là local, ta có thể cho phép
+             // Nếu user là google, ta cũng cho phép chung email là chung tài khoản
+             
+             if (!existingUser.provider_id) {
+                existingUser.provider = "facebook";
+                existingUser.provider_id = facebookId;
+             }
+             // Nếu muốn support multiple auth providers, cần bảng riêng, nhưng ở đây
+             // ta giả định đơn giản là cập nhật thông tin nếu cần thiết hoặc chỉ cần trả về user
+             
+             // Cập nhật refresh_token nếu có
+             if (refreshToken) {
+                existingUser.refresh_token = refreshToken;
+             }
+             
+             await existingUser.save();
+             return done(null, existingUser);
           }
 
           user = await User.create({
