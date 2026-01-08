@@ -1,5 +1,6 @@
 import { Op, fn, col, literal } from "sequelize";
 import { Order, OrderItem, Product, User, ShippingAddress } from "../../models/index.js";
+import { sendOrderStatusEmail } from "../emailService.js";
 
 const normalizeDate = ({ from, to }) => {
     const now = new Date();
@@ -154,11 +155,14 @@ export const getOrderDetail = async (orderId) => {
 };
 
 const validStatusTransitions = {
-    pending: ['confirmed', 'canceled'],
-    confirmed: ['shipping', 'canceled'],
-    shipping: ['completed', 'canceled'],
+    pending: ['confirmed', 'canceled', 'paid', 'paided'],
+    paid: ['confirmed', 'shipping', 'canceled', 'refunded'],
+    paided: ['confirmed', 'shipping', 'canceled', 'refunded'],
+    confirmed: ['shipping', 'canceled', 'refunded'],
+    shipping: ['completed', 'canceled', 'refunded'],
     completed: [], // This is a terminal state
-    canceled: [] // This is a terminal state
+    canceled: [], // This is a terminal state
+    refunded: []  // This is a terminal state
 };
 
 export const updateOrderStatus = async (orderId, newStatus) => {
@@ -185,6 +189,15 @@ export const updateOrderStatus = async (orderId, newStatus) => {
 
     order.status = newStatus;
     await order.save();
+
+    // Gửi email thông báo cho khách hàng
+    if (order.user && order.user.email) {
+        // Gửi email bất đồng bộ (không đợi email gửi xong mới trả về response cho admin)
+        sendOrderStatusEmail(order.user.email, order.order_number, newStatus, {
+            total_amount: order.total_amount,
+            notes: order.notes
+        }).catch(err => console.error("Error sending order status email:", err));
+    }
 
     // Return transformed order to match frontend format
     return {

@@ -381,6 +381,16 @@ export const cancelOrder = async (userId, orderId) => {
         }
     });
 
+    // 3. Gửi email thông báo hủy đơn
+    // Lấy thông tin user để gửi email (vì findOrderForUser chưa chắc đã include User)
+    const user = await User.findByPk(userId);
+    if (user && user.email) {
+        sendOrderStatusEmail(user.email, order.id, 'canceled', {
+            total_amount: order.total_amount,
+            notes: order.notes
+        });
+    }
+
     return order;
 };
 
@@ -473,7 +483,7 @@ export const getAllOrdersAdmin = async ({
  * Admin: Cập nhật trạng thái đơn hàng
  */
 export const updateOrderStatusAdmin = async (orderId, newStatus) => {
-    const validStatuses = ['pending', 'confirmed', 'shipping', 'completed', 'canceled'];
+    const validStatuses = ['pending', 'confirmed', 'shipping', 'completed', 'canceled', 'paided'];
     if (!validStatuses.includes(newStatus)) {
         throw new Error("Trạng thái không hợp lệ");
     }
@@ -526,7 +536,7 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
  */
 export const handleVnPayCallback = async (vnpParams) => {
     const secretKey = (env.VNP_HASH_SECRET || "").trim();
-    
+
     if (!secretKey) {
         throw new Error("VNPay secret key chưa được cấu hình");
     }
@@ -570,7 +580,7 @@ export const handleVnPayCallback = async (vnpParams) => {
 
     // Lấy orderId từ vnpTxnRef (format: orderId_HHmmss)
     const orderId = parseInt(vnpTxnRef.split('_')[0], 10);
-    
+
     if (!orderId || isNaN(orderId)) {
         throw new Error("Không tìm thấy Order ID từ callback");
     }
@@ -601,7 +611,7 @@ export const handleVnPayCallback = async (vnpParams) => {
             paymentStatus = 'completed';
             // Nếu order đang pending, chuyển sang confirmed
             if (order.status === 'pending') {
-                orderStatus = 'confirmed';
+                orderStatus = 'paided';
             }
         } else {
             paymentStatus = 'failed';
@@ -631,8 +641,8 @@ export const handleVnPayCallback = async (vnpParams) => {
             orderId: order.id,
             paymentStatus,
             orderStatus,
-            message: paymentStatus === 'completed' 
-                ? 'Thanh toán thành công' 
+            message: paymentStatus === 'completed'
+                ? 'Thanh toán thành công'
                 : `Thanh toán thất bại. Mã lỗi: ${vnpResponseCode}`
         };
     });

@@ -42,6 +42,11 @@ export const sendOrderStatusEmail = async (to, orderId, newStatus, orderDetails 
             message = "Đơn hàng đang được giao đến địa chỉ của bạn. Vui lòng chú ý điện thoại để nhận hàng.";
             statusColor = "#007bff";
             break;
+        case 'paided':
+            statusText = "THANH TOÁN THÀNH CÔNG";
+            message = "Chúng tôi đã nhận được thanh toán. Đơn hàng sẽ sớm được xử lý.";
+            statusColor = "#17a2b8";
+            break;
         case 'completed':
             statusText = "ĐÃ HOÀN THÀNH";
             message = "Cảm ơn bạn đã mua sắm tại cửa hàng! Hy vọng bạn sẽ hài lòng với sản phẩm.";

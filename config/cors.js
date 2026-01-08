@@ -7,8 +7,9 @@ export const buildCorsOptions = () => {
       "http://localhost:5174",
       "http://localhost:3000",
       "http://localhost:8080",
-      "https://clothes-shop-rouge.vercel.app",
-      "https://admin-panel-clothes-shop-deploy.vercel.app", // Add Vercel URL explicitly
+      "https://clothes-shop-men.vercel.app",
+      "https://admin-panel-clothes-shop-deploy.vercel.app",
+      "https://clothes-shop-frontend-admin.vercel.app", // Add Vercel URL explicitly
       APP_CONSTANTS.frontendUrl,
     ].filter(Boolean))
   );
@@ -34,8 +35,9 @@ export const buildCorsOptions = () => {
         }
       }
 
-      // Kiểm tra origin có trong danh sách allowed
-      if (allowedOrigins.includes(origin)) {
+      // Kiểm tra origin có trong danh sách allowed hoặc là subdomain của vercel.app
+      const isVercelOrigin = origin.endsWith(".vercel.app");
+      if (allowedOrigins.includes(origin) || isVercelOrigin) {
         return callback(null, true);
       }
 
