@@ -28,7 +28,7 @@ function setCorsHeadersEarly(req, res) {
 
 export default async function handler(req, res) {
   setCorsHeadersEarly(req, res);
-  if (req.method === "OPTIONS") {
+  if (String(req.method || "").toUpperCase() === "OPTIONS") {
     return res.status(204).end();
   }
 
