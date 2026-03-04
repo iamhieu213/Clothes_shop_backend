@@ -1,3 +1,4 @@
+import "pg";
 import { Sequelize } from "sequelize";
 import { loadEnv } from "./env.js";
 

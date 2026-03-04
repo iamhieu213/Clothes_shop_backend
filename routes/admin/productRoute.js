@@ -4,7 +4,8 @@ import multer from "multer";
 import { createProductController, createVariantController, deleteVariantController, deleteProductController, updateProductController, getAllProductsController, searchProductsController, getBrandsController } from "../../controllers/admin/productController.js";
 
 const router = express.Router();
-const upload = multer({ dest: "tmp/"})
+const uploadDir = typeof process.env.VERCEL !== "undefined" ? "/tmp" : "tmp/";
+const upload = multer({ dest: uploadDir });
 
 /**
  * @swagger

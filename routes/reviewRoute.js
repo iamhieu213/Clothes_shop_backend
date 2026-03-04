@@ -9,7 +9,8 @@ import {
 } from "../controllers/user/reviewController.js";
 
 const router = express.Router();
-const upload = multer({ dest: "tmp/" });
+const uploadDir = typeof process.env.VERCEL !== "undefined" ? "/tmp" : "tmp/";
+const upload = multer({ dest: uploadDir });
 
 /**
  * @swagger
