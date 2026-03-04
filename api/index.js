@@ -5,7 +5,33 @@ import { startServer } from "../bootstrap.js";
 let initialized = false;
 let initError = null;
 
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  "https://clothes-shop-men.vercel.app",
+  "https://admin-panel-clothes-shop-deploy.vercel.app",
+  "https://clothes-shop-frontend-admin.vercel.app",
+];
+
+function setCorsHeadersEarly(req, res) {
+  const origin = req.headers?.origin;
+  const allow = !origin || ALLOWED_ORIGINS.includes(origin) || (typeof origin === "string" && origin.endsWith(".vercel.app"));
+  if (allow && origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.setHeader("Access-Control-Max-Age", "86400");
+}
+
 export default async function handler(req, res) {
+  setCorsHeadersEarly(req, res);
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
   try {
     if (!initialized && !initError) {
       await startServer();
