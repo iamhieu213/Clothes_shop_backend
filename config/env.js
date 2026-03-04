@@ -44,10 +44,14 @@ export const loadEnv = () => {
   const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
-    console.error("❌ Invalid or missing environment variables:");
-    parsed.error.issues.forEach((issue) => {
-      console.error(`- ${issue.path.join(".")}: ${issue.message}`);
-    });
+    const messages = parsed.error.issues.map(
+      (issue) => `${issue.path.join(".")}: ${issue.message}`
+    );
+    console.error("❌ Invalid or missing environment variables:", messages);
+    const err = new Error(`Env validation failed: ${messages.join("; ")}`);
+    if (typeof process.env.VERCEL !== "undefined") {
+      throw err;
+    }
     process.exit(1);
   }
 

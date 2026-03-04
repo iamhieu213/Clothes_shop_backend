@@ -72,7 +72,7 @@ async function initDatabase() {
     console.error("❌ Database initialization failed:", error);
     console.error("Error details:", error.message);
     console.error("Stack trace:", error.stack);
-    process.exit(1);
+    throw error;
   }
 }
 
