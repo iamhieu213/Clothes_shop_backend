@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import passport from "passport";
 import session from "express-session";
-import { buildCorsOptions } from "./config/cors.js";
+import { buildCorsOptions, setCorsHeaders } from "./config/cors.js";
 import { loadEnv } from "./config/env.js";
 import "./config/google.config.js";
 import "./config/facebook.config.js";
@@ -17,6 +17,13 @@ loadEnv();
 
 const app = express();
 
+app.use((req, res, next) => {
+  setCorsHeaders(req, res);
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 app.use(cors(buildCorsOptions()));
 app.use(express.json());
 app.use(requestLogger());
