@@ -20,15 +20,22 @@ import {
 
 loadEnv();
 
-// Sync strategy can be controlled with env var `SYNC_STRATEGY` or legacy `DISCOUNT_SYNC_STRATEGY`.
-// Allowed values: 'force' (drops & recreates), 'alter' (safer schema adjust). Default: 'alter'.
-const syncStrategy = process.env.SYNC_STRATEGY || process.env.DISCOUNT_SYNC_STRATEGY || "alter";
+const env = loadEnv();
+const isProduction = env.NODE_ENV === "production";
+
+// Sync strategy controlled by `SYNC_STRATEGY` env var.
+// In Production: defaults to 'none' (fastest boot, assumes schema is ready).
+// In Development: defaults to 'alter' (auto-updates schema).
+const syncStrategy = process.env.SYNC_STRATEGY || (isProduction ? "none" : "alter");
 
 async function syncModel(model, label) {
   if (syncStrategy === "force") {
     await model.sync({ force: true });
   } else if (syncStrategy === "alter") {
     await model.sync({ alter: true });
+  } else if (syncStrategy === "none") {
+    // Skip sync for better performance in production
+    return;
   } else {
     await model.sync();
   }
