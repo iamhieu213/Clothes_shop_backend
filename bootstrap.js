@@ -42,43 +42,44 @@ async function syncModel(model, label) {
 }
 
 async function initDatabase() {
+  const startTime = Date.now();
   try {
+    console.log("⏳ Authenticating database connection...");
     await sequelize.authenticate();
+    console.log("✅ Database authentication successful.");
 
-    // Level 1: No dependencies
-    await syncModel(User, "User");
-    await syncModel(Category, "Category");
-    await syncModel(Discount, "Discount");
+    const models = [
+      { model: User, name: "User" },
+      { model: Category, name: "Category" },
+      { model: Discount, name: "Discount" },
+      { model: ShippingAddress, name: "ShippingAddress" },
+      { model: Product, name: "Product" },
+      { model: ProductVariant, name: "ProductVariant" },
+      { model: Cart, name: "Cart" },
+      { model: CartItem, name: "CartItem" },
+      { model: Order, name: "Order" },
+      { model: OrderItem, name: "OrderItem" },
+      { model: Payment, name: "Payment" },
+      { model: Review, name: "Review" },
+      { model: Wishlist, name: "Wishlist" },
+      { model: Collection, name: "Collection" },
+      { model: ProductCollection, name: "ProductCollection" },
+    ];
 
-    // Level 2: Depends on User, Category
-    await syncModel(ShippingAddress, "ShippingAddress");
-    await syncModel(Product, "Product");
+    console.log(`🔄 Sync strategy: ${syncStrategy}`);
+    
+    for (const item of models) {
+      const stepStart = Date.now();
+      process.stdout.write(`   - Syncing ${item.name}... `);
+      await syncModel(item.model, item.name);
+      console.log(`done (${Date.now() - stepStart}ms)`);
+    }
 
-    // Level 3: Depends on Product, User
-    await syncModel(ProductVariant, "ProductVariant");
-    await syncModel(Cart, "Cart");
-
-    // Level 4: Depends on Cart, ProductVariant
-    await syncModel(CartItem, "CartItem");
-
-    // Level 5: Depends on User, ShippingAddress, Discount
-    await syncModel(Order, "Order");
-
-    // Level 6: Depends on Order, Product, ProductVariant
-    await syncModel(OrderItem, "OrderItem");
-    await syncModel(Payment, "Payment");
-
-    // Level 7: Depends on User, Product
-    await syncModel(Review, "Review");
-    await syncModel(Wishlist, "Wishlist");
-
-    // Level 8: Independent collection tables
-    await syncModel(Collection, "Collection");
-    await syncModel(ProductCollection, "ProductCollection");
+    const duration = Date.now() - startTime;
+    console.log(`✨ Database initialization completed in ${duration}ms`);
   } catch (error) {
-    console.error("❌ Database initialization failed:", error);
+    console.error("❌ Database initialization failed after", Date.now() - startTime, "ms");
     console.error("Error details:", error.message);
-    console.error("Stack trace:", error.stack);
     throw error;
   }
 }
