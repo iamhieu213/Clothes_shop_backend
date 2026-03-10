@@ -40,6 +40,10 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/api/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 app.use("/api", ApiRouter);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 app.use(notFoundHandler);
