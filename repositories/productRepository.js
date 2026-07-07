@@ -89,6 +89,35 @@ export const listProductsWithRelations = async ({
 }) => {
   return Product.findAll({
     where,
+    attributes: {
+      include: [
+        [
+          literal(`(
+            SELECT COALESCE(AVG(rating), 0)
+            FROM reviews
+            WHERE product_id = "products"."id"
+          )`),
+          'average_rating'
+        ],
+        [
+          literal(`(
+            SELECT COUNT(id)
+            FROM reviews
+            WHERE product_id = "products"."id"
+          )`),
+          'review_count'
+        ],
+        [
+          literal(`(
+            SELECT COALESCE(SUM(oi.quantity), 0)
+            FROM order_items oi
+            JOIN orders o ON o.id = oi.order_id
+            WHERE oi.product_id = "products"."id" AND o.status IN ('completed', 'delivered')
+          )`),
+          'sold_count'
+        ]
+      ]
+    },
     include: [
       {
         model: ProductVariant,

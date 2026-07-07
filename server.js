@@ -6,6 +6,10 @@ import { startServer } from "./bootstrap.js";
 import { swaggerUi, swaggerSpec } from "./swagger.js";  
 
 // Loading environment variables...
+import { createServer } from "http";
+import { initSocket } from "./lib/socket.js";
+
+// Loading environment variables...
 loadEnv();
 
 const PORT = APP_CONSTANTS.port;
@@ -14,8 +18,15 @@ const PORT = APP_CONSTANTS.port;
   try {
     // Starting server initialization...
     await startServer(); // Khởi tạo database
+    
+    // Create HTTP server
+    const httpServer = createServer(app);
+    
+    // Initialize Socket.io
+    initSocket(httpServer);
+    
     // Starting HTTP server...
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`🚀 Server started on port ${PORT}`);
       console.log(`📍 http://localhost:${PORT}`);
       console.log(`📍 API: http://localhost:${PORT}/api`);

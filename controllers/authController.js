@@ -1,5 +1,5 @@
 import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService, verifyRefreshToken, createAccessToken, verifyEmailService, resendVerificationEmailService } from "../services/authService.js";
-import passport  from "passport";
+import passport from "passport";
 import { buildOAuthCallbackUrl, redirectOAuthError } from "../utils/oauth.js";
 import { APP_CONSTANTS } from "../config/constants.js";
 import { sendSuccess, sendError } from "./controllerUtils.js";
@@ -13,10 +13,11 @@ export const getCurrentUser = async (req, res) => {
         message: "Unauthorized"
       });
     }
-    
+
     // req.user is set by authenticateToken middleware
-    const { password, access_token, refresh_token, ...userResponse } = req.user;
-    
+    const payload = req.user.toJSON ? req.user.toJSON() : req.user;
+    const { password, access_token, refresh_token, ...userResponse } = payload;
+
     sendSuccess(res, {
       message: "User retrieved successfully",
       data: userResponse
@@ -27,16 +28,16 @@ export const getCurrentUser = async (req, res) => {
 };
 
 // dang ky bang tai khoa local
-export const signUp = async (req,res) => {
-    try{
-        const newUser = await registerUser(req.body);
-        sendSuccess(res, {
-            message: "User registered successfully",
-            data: { user: newUser }
-        });
-    }catch(error){
-        sendError(res, error);
-    }
+export const signUp = async (req, res) => {
+  try {
+    const newUser = await registerUser(req.body);
+    sendSuccess(res, {
+      message: "User registered successfully",
+      data: { user: newUser }
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
 }
 
 //Refresh access token
@@ -90,51 +91,51 @@ export const refreshAccessToken = async (req, res) => {
 };
 
 // dang nhap tai khoan bang local
-export const signIn = async (req,res) => {
-    try{
-       const { email, password, isAdminLogin = false } = req.body;
-       const result = await loginUser(email,password);
+export const signIn = async (req, res) => {
+  try {
+    const { email, password, isAdminLogin = false } = req.body;
+    const result = await loginUser(email, password);
 
-       // If this is admin login, verify user has admin privileges
-       if (isAdminLogin && !['admin', 'super_admin'].includes(result.user.role)) {
-         return res.status(403).json({
-           success: false,
-           message: "Access denied. Admin privileges required."
-         });
-       }
-
-       sendSuccess(res, {
-        message: "User logged in successfully",
-        data: {
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            user: result.user
-        }
-       });
-    }catch(error){
-        sendError(res, error);
+    // If this is admin login, verify user has admin privileges
+    if (isAdminLogin && !['admin', 'super_admin'].includes(result.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required."
+      });
     }
+
+    sendSuccess(res, {
+      message: "User logged in successfully",
+      data: {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        user: result.user
+      }
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
 }
 
 //dang xuat tai khoan
-export const signOut = async (req,res) => {
-    try{
-        const email = req.user.email;
-        const result = await logoutUser(email);
+export const signOut = async (req, res) => {
+  try {
+    const email = req.user.email;
+    const result = await logoutUser(email);
 
-        // res.clearCookie("accessToken");
-        // res.clearCookie("refreshToken");
-        res.status(200).json({
-            success: true,
-            message: "User logged out successfully",
-        })
+    // res.clearCookie("accessToken");
+    // res.clearCookie("refreshToken");
+    res.status(200).json({
+      success: true,
+      message: "User logged out successfully",
+    })
 
-    }catch(error){
-        res.status(400).json({
-            success : false,
-            message: error.message
-        })
-    }
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    })
+  }
 }
 
 //Quen mat khau
@@ -170,13 +171,13 @@ export const resetPassword = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
-    
+
     if (!token) {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?error=missing_token`);
     }
 
     const result = await verifyEmailService(token);
-    
+
     // Redirect về frontend với success message
     return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?success=true`);
   } catch (err) {
@@ -189,7 +190,7 @@ export const verifyEmail = async (req, res) => {
 export const resendVerificationEmail = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -198,7 +199,7 @@ export const resendVerificationEmail = async (req, res) => {
     }
 
     const result = await resendVerificationEmailService(email);
-    
+
     sendSuccess(res, {
       message: result.message,
       data: {}
@@ -210,7 +211,7 @@ export const resendVerificationEmail = async (req, res) => {
 
 //Dang nhap bang google
 export const signInGoogleController = {
-    //Xử lý callback sau khi Google xác thực thành công
+  //Xử lý callback sau khi Google xác thực thành công
   googleCallback: async (req, res) => {
     try {
       if (!req.user) {

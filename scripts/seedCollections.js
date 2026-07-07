@@ -1,4 +1,4 @@
-import sequelize from "../config/db.config.js";
+import { sequelize } from "../config/db.config.js";
 import { Collection } from "../models/collectionModel.js";
 import { ProductCollection } from "../models/productCollectionModel.js";
 import { Product } from "../models/productModel.js";
