@@ -3,16 +3,22 @@ import { Op } from "sequelize";
 
 export const listUsers = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = "" } = req.query;
+        const { page = 1, limit = 10, search = "", role } = req.query;
         
         const offset = (parseInt(page) - 1) * parseInt(limit);
         
-        const where = search ? {
-            [Op.or]: [
+        const where = {};
+        
+        if (search) {
+            where[Op.or] = [
                 { email: { [Op.iLike]: `%${search}%` } },
                 { name: { [Op.iLike]: `%${search}%` } }
-            ]
-        } : {};
+            ];
+        }
+        
+        if (role && role !== 'all') {
+            where.role = { [Op.iLike]: role };
+        }
         
         const { count, rows } = await User.findAndCountAll({
             where,

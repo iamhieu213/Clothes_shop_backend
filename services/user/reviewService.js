@@ -1,5 +1,5 @@
 import { fn, col } from "sequelize";
-import { Product, Review, User } from "../../models/index.js";
+import { Product, Review, User, Order, OrderItem } from "../../models/index.js";
 import { buildPagination } from "./product/queryBuilder.js";
 
 const buildUserName = (user) => {
@@ -98,6 +98,30 @@ export const createReview = async ({
     throw new Error("Rating must be an integer between 1 and 5");
   }
 
+  //Kiem tra xem nguoi dung da mua hang chua
+  const hasPurchased = await Order.findOne({
+    where: {
+      user_id: userId,
+      status: "completed"
+    },
+    include: [
+      {
+        model: OrderItem,
+        as: "order_items",
+        where: {
+          product_id: productId
+        },
+        required: true
+      }
+    ]
+  })
+  if (!hasPurchased) throw new Error("Bạn chỉ có thể đánh giá sản phẩm này khi bạn đã mua hàng!");
+  const existingReview = await Review.findOne({
+    where: { user_id: userId, product_id: productId }
+  });
+  if (existingReview) {
+    throw new Error("Bạn đã đánh giá sản phẩm này rồi!"); 
+  }
   const payload = {
     user_id: userId,
     product_id: productId,

@@ -25,7 +25,36 @@ export class ProductCollectionRepository {
         {
           model: Product,
           as: 'product',
-          attributes: ['id', 'name', 'slug', 'base_price', 'sale_price', 'images', 'status', 'is_new', 'tags'],
+          attributes: {
+            include: [
+              'id', 'name', 'slug', 'base_price', 'sale_price', 'images', 'status', 'is_new', 'tags',
+              [
+                literal(`(
+                  SELECT COALESCE(AVG(rating), 0)
+                  FROM reviews
+                  WHERE product_id = "product"."id"
+                )`),
+                'average_rating'
+              ],
+              [
+                literal(`(
+                  SELECT COUNT(id)
+                  FROM reviews
+                  WHERE product_id = "product"."id"
+                )`),
+                'review_count'
+              ],
+              [
+                literal(`(
+                  SELECT COALESCE(SUM(oi.quantity), 0)
+                  FROM order_items oi
+                  JOIN orders o ON o.id = oi.order_id
+                  WHERE oi.product_id = "product"."id" AND o.status IN ('completed', 'delivered')
+                )`),
+                'sold_count'
+              ]
+            ]
+          },
           where: { status: 'active' },
           required: false // Include even if product is inactive (can be filtered at service level)
         }

@@ -1,7 +1,7 @@
 import { Product, Category, ProductVariant } from "../../models/index.js";
 import { Op } from "sequelize";
 
-export const getAllProductsSimple = async (page = 1, limit = 10, search = "") => {
+export const getAllProductsSimple = async (page = 1, limit = 10, search = "", categoryId = null, status = null) => {
   try {
     const whereClause = {};
 
@@ -10,6 +10,14 @@ export const getAllProductsSimple = async (page = 1, limit = 10, search = "") =>
         { name: { [Op.iLike]: `%${search}%` } },
         { brand: { [Op.iLike]: `%${search}%` } },
       ];
+    }
+
+    if (categoryId) {
+      whereClause.category_id = categoryId;
+    }
+
+    if (status) {
+      whereClause.status = status;
     }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);

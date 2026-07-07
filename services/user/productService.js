@@ -69,8 +69,13 @@ const summarizeProduct = (product) => {
       }
     : null;
 
-  const rating = 0;
-  const reviewCount = 0;
+  const rawRating = data.average_rating;
+  const rawReviewCount = data.review_count;
+  const rawSoldCount = data.sold_count;
+
+  const averageRating = rawRating ? parseFloat(Number(rawRating).toFixed(1)) : 0;
+  const reviewCount = rawReviewCount ? parseInt(rawReviewCount, 10) : 0;
+  const soldCount = rawSoldCount ? parseInt(rawSoldCount, 10) : 0;
 
   return {
     id: data.id,
@@ -85,11 +90,12 @@ const summarizeProduct = (product) => {
     images,
     colors,
     sizes,
-    rating,
-    reviewCount,
+    rating: averageRating,
+    reviewCount: reviewCount,
+    soldCount: soldCount,
     isNew: data.is_new || false,
     inStock,
-    tags,
+    tags: data.tags || [],
     createdAt: data.created_at ? new Date(data.created_at).toISOString() : null,
     updatedAt: data.updated_at ? new Date(data.updated_at).toISOString() : null,
     defaultVariantId: pickDefaultVariantId(variants),

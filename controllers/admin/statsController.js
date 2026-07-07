@@ -1,4 +1,4 @@
-import { getRevenueStats, getTopProducts, getDashboardStats, getRecentOrders } from "../../services/admin/statsService.js";
+import { getRevenueStats, getTopProducts, getDashboardStats, getRecentOrders, getPerformanceStats } from "../../services/admin/statsService.js";
 import { sendSuccess, sendError } from "../controllerUtils.js";
 
 // Dashboard KPIs overview
@@ -73,8 +73,15 @@ export const getBestSellersController = async (req, res) => {
 // Legacy: revenue stats (startDate/endDate)
 export const getRevenueStatsController = async (req, res) => {
     try{
-        const { startDate, endDate } = req.query;
-        const data = await getRevenueStats({ from: startDate, to: endDate });
+        const { from, to, startDate, endDate } = req.query;
+        
+        // Use from/to if provided (new frontend), fallback to startDate/endDate (legacy)
+        const dateRange = {
+            from: from || startDate,
+            to: to || endDate
+        };
+
+        const data = await getPerformanceStats(dateRange);
 
         return sendSuccess(res, {
             data,

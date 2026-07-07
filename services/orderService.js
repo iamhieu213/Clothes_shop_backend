@@ -22,6 +22,7 @@ import {
 } from "../repositories/orderRepository.js";
 import { withTransaction } from "../utils/transactions.js";
 import { Order, User } from "../models/index.js";
+import { emitToAdmins } from "../lib/socket.js";
 
 const env = loadEnv();
 
@@ -345,6 +346,14 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         });
     }
 
+    // Emit real-time notification to admins
+    emitToAdmins("new_order", {
+        orderId: result.order.id,
+        customerName: result.user?.name || "Khách hàng",
+        totalAmount: result.financials.totalAmount,
+        status: result.order.status
+    });
+
     return result;
 };
 
@@ -652,6 +661,17 @@ export const handleVnPayCallback = async (vnpParams) => {
         sendOrderStatusEmail(order.user.email, order.id, result.orderStatus, {
             total_amount: order.total_amount,
             notes: order.notes
+        });
+    }
+
+    // If payment was successful, notify admins again (maybe status changed to paided)
+    if (result.success) {
+        emitToAdmins("new_order", {
+            orderId: result.orderId,
+            customerName: order.user?.name || "Khách hàng",
+            totalAmount: order.total_amount,
+            status: result.orderStatus,
+            paymentSuccess: true
         });
     }
 
