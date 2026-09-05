@@ -9,14 +9,15 @@ import { sendSuccess, sendError } from "../controllerUtils.js";
 
 export const listProductsController = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = "", category_id = null, status = null } = req.query;
-        
+        const { page = 1, limit = 10, search = "", category_id, categoryId, status } = req.query;
+        const catId = category_id || categoryId;
+
         const result = await getAllProductsSimple(
             parseInt(page),
             parseInt(limit),
             search,
-            category_id,
-            status
+            catId ? parseInt(catId) : null,
+            status || null
         );
 
         return sendSuccess(res, {

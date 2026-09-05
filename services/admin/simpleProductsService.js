@@ -1,7 +1,14 @@
 import { Product, Category, ProductVariant } from "../../models/index.js";
 import { Op } from "sequelize";
+import { collectDescendantCategoryIds } from "../../repositories/categoryRepository.js";
 
-export const getAllProductsSimple = async (page = 1, limit = 10, search = "", categoryId = null, status = null) => {
+export const getAllProductsSimple = async (
+  page = 1,
+  limit = 10,
+  search = "",
+  categoryId = null,
+  status = null
+) => {
   try {
     const whereClause = {};
 
@@ -13,7 +20,12 @@ export const getAllProductsSimple = async (page = 1, limit = 10, search = "", ca
     }
 
     if (categoryId) {
-      whereClause.category_id = categoryId;
+      const categoryIds = await collectDescendantCategoryIds(categoryId);
+      if (categoryIds && categoryIds.length > 0) {
+        whereClause.category_id = { [Op.in]: categoryIds };
+      } else {
+        whereClause.category_id = categoryId;
+      }
     }
 
     if (status) {
@@ -38,7 +50,8 @@ export const getAllProductsSimple = async (page = 1, limit = 10, search = "", ca
       ],
       order: [['created_at', 'DESC']],
       limit: parseInt(limit),
-      offset
+      offset,
+      distinct: true
     });
 
     return {

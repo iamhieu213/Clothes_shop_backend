@@ -1,22 +1,18 @@
 import { Op, fn, col, literal } from 'sequelize';
 import { User, Product, Cart, CartItem, Order, OrderItem} from '../../models/index.js';
 
-//default 30 ngay gan nhat
+// Default 180 ngày gần nhất nếu từ/đến không được truyền
 const normalizeDate = ({ from, to }) => {
     const now = new Date();
-
     const toDate = to ? new Date(to) : now;
-
-    const fromDate = from ? new Date(from) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000 );
-
+    const fromDate = from ? new Date(from) : new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
     return { fromDate, toDate };
 }
 
-//Doanh thu theo ngay thang
+// Doanh thu theo ngày/tháng
 export const getRevenueStats = async ({ from, to, groupBy = 'day'}) => {
     const { fromDate, toDate } = normalizeDate({ from, to});
 
-    //Lay danh sach order trong khoang, chi tinh paid/completed
     const orders = await Order.findAll({
         attributes: ["id", "total_amount", "created_at"],
         where: {
@@ -31,21 +27,20 @@ export const getRevenueStats = async ({ from, to, groupBy = 'day'}) => {
         raw: true,
     });
 
-    //Gom nhom theo ngay thang
     const buckets = {}; 
-    for( const order of orders) {
+    for (const order of orders) {
         const d = new Date(order.created_at);
         let key;
 
-        if( groupBy === 'month') {
+        if (groupBy === 'month') {
             const y = d.getFullYear();
             const m = String(d.getMonth()+1).padStart(2, "0");
             key = `${y}-${m}`;
-        }else{
+        } else {
             key = d.toISOString().slice(0,10);
         }
 
-        if(!buckets[key]){
+        if (!buckets[key]) {
             buckets[key] = {
                 period: key,
                 revenue: 0,
@@ -55,15 +50,14 @@ export const getRevenueStats = async ({ from, to, groupBy = 'day'}) => {
         buckets[key].revenue += Number(order.total_amount || 0);
         buckets[key].order_count += 1;
     }
-    //Chuyen ve array & sort tang dan theo period
+
     const result = Object.values(buckets).sort((a,b) =>
           a.period.localeCompare(b.period)
     );
     return result;
 }
 
-//Hien thi top san pham ban chay
-
+// Hiển thị top sản phẩm bán chạy
 export const getTopProducts = async({ from, to , limit = 10}) => {
     const { fromDate, toDate} = normalizeDate({ from, to});
     
@@ -71,10 +65,8 @@ export const getTopProducts = async({ from, to , limit = 10}) => {
         attributes: [
             "product_id",
             [fn("SUM", col("quantity")), "total_quantity"],
-            //tinh doanh thu tren san pham
             [fn("SUM", literal("quantity * unit_price")), "total_revenue"],
         ],
-
         include: [
             {
                 model: Product,
@@ -102,6 +94,7 @@ export const getTopProducts = async({ from, to , limit = 10}) => {
         raw: true,
         nest: true,
     });
+
     return rows.map(row => ({
         product_id: row.product_id,
         total_quantity: parseInt(row.total_quantity) || 0,
@@ -113,25 +106,24 @@ export const getTopProducts = async({ from, to , limit = 10}) => {
 // Dashboard KPIs overview
 export const getDashboardStats = async () => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    today.setHours(0, 0, 0, 0);
     
     const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     
-    // Get counts for KPIs
     const [
         totalUsers,
         totalProducts,
+        ordersTotal,
         ordersToday,
         ordersThisMonth,
+        revenueTotal,
         revenueToday,
         revenueThisMonth,
         recentOrders
     ] = await Promise.all([
         User.count(),
         Product.count(),
+        Order.count(),
         Order.count({
             where: {
                 status: {
@@ -149,6 +141,13 @@ export const getDashboardStats = async () => {
                 },
                 created_at: {
                     [Op.gte]: thisMonthStart,
+                }
+            }
+        }),
+        Order.sum('total_amount', {
+            where: {
+                status: {
+                    [Op.in]: ["paid", "completed", "delivered"],
                 }
             }
         }),
@@ -173,11 +172,6 @@ export const getDashboardStats = async () => {
             }
         }),
         Order.findAll({
-            where: {
-                created_at: {
-                    [Op.gte]: yesterday,
-                }
-            },
             include: [
                 {
                     model: User,
@@ -198,10 +192,12 @@ export const getDashboardStats = async () => {
             total: totalProducts || 0
         },
         orders: {
+            total: ordersTotal || 0,
             today: ordersToday || 0,
             thisMonth: ordersThisMonth || 0
         },
         revenue: {
+            total: parseFloat(revenueTotal || 0),
             today: parseFloat(revenueToday || 0),
             thisMonth: parseFloat(revenueThisMonth || 0)
         },
@@ -225,11 +221,6 @@ export const getDashboardStats = async () => {
 // Get recent orders
 export const getRecentOrders = async (limit = 10) => {
     const orders = await Order.findAll({
-        where: {
-            created_at: {
-                [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-            }
-        },
         include: [
             {
                 model: User,

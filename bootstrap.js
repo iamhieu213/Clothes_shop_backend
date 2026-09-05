@@ -24,9 +24,9 @@ const env = loadEnv();
 const isProduction = env.NODE_ENV === "production";
 
 // Sync strategy controlled by `SYNC_STRATEGY` env var.
-// In Production: defaults to 'none' (fastest boot, assumes schema is ready).
-// In Development: defaults to 'alter' (auto-updates schema).
-const syncStrategy = process.env.SYNC_STRATEGY || (isProduction ? "none" : "alter");
+// Default to 'none' to avoid running slow ALTER TABLE queries on every boot.
+// Set SYNC_STRATEGY=alter in .env when you modify model definitions.
+const syncStrategy = process.env.SYNC_STRATEGY || "none";
 
 async function syncModel(model, label) {
   if (syncStrategy === "force") {
@@ -34,7 +34,7 @@ async function syncModel(model, label) {
   } else if (syncStrategy === "alter") {
     await model.sync({ alter: true });
   } else if (syncStrategy === "none") {
-    // Skip sync for better performance in production
+    // Skip sync for fast server boot
     return;
   } else {
     await model.sync();
@@ -68,11 +68,15 @@ async function initDatabase() {
 
     console.log(`🔄 Sync strategy: ${syncStrategy}`);
     
-    for (const item of models) {
-      const stepStart = Date.now();
-      process.stdout.write(`   - Syncing ${item.name}... `);
-      await syncModel(item.model, item.name);
-      console.log(`done (${Date.now() - stepStart}ms)`);
+    if (syncStrategy === "none") {
+      console.log("⚡ Skipping database table sync (SYNC_STRATEGY=none). Server boots instantly!");
+    } else {
+      for (const item of models) {
+        const stepStart = Date.now();
+        process.stdout.write(`   - Syncing ${item.name}... `);
+        await syncModel(item.model, item.name);
+        console.log(`done (${Date.now() - stepStart}ms)`);
+      }
     }
 
     const duration = Date.now() - startTime;
